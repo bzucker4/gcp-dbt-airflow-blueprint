@@ -1,0 +1,36 @@
+# =============================================================================
+# Deploy dbt + Airflow to Cloud Composer
+#
+# PUBLIC PREVIEW: pipeline outline only. The complete workflow ships with the
+# full blueprint: https://payhip.com/b/YIq4E
+#
+# >>> GitHub only runs workflows from .github/workflows/ <<<
+# This file lives in github_workflows/ on purpose so it never runs here.
+#
+# The full workflow, on every push to main:
+#   job `terraform`  terraform fmt -check, init -backend=false, validate
+#   job `deploy`     (needs: terraform, environment: production)
+#     1. Verify required repository variables
+#     2. Python + dbt install (same version pins as Composer's dbt virtualenv)
+#     3. Syntax-check DAGs
+#     4. Keyless auth: OIDC -> Workload Identity Federation (no JSON keys)
+#     5. dbt deps + dbt parse -> manifest.json, then sanity-check it
+#     6. Publish versioned manifest to the dbt state bucket
+#     7. gcloud storage rsync dbt project -> gs://<composer>/data/dbt_project
+#     8. gcloud storage rsync DAGs -> gs://<composer>/dags (protects airflow_monitoring.py)
+#     9. Verify deployment + job summary
+# =============================================================================
+name: Deploy dbt + Airflow to Cloud Composer (preview)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the full workflow
+        run: echo "The complete CI/CD pipeline is included in the full blueprint - https://payhip.com/b/YIq4E"

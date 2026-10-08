@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is git-ignored.
+project_id        = "acme-data-prod"
+region            = "us-central1"
+bq_location       = "US"
+environment       = "prod"
+name_prefix       = "dbt-bp"
+github_repository = "acme-co/gcp-dbt-airflow-blueprint"
+
+# Optional overrides
+# composer_image_version = "composer-2.9.7-airflow-2.9.3"
+# dbt_schedule           = "0 6 * * *"
+# dbt_threads            = 8
+# labels                 = { cost_center = "data-platform", owner = "analytics-eng" }

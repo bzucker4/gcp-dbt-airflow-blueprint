@@ -1,0 +1,24 @@
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+dbt_project/.user.yml
+prod-state/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Terraform
+infrastructure/.terraform/
+infrastructure/*.tfstate
+infrastructure/*.tfstate.*
+infrastructure/terraform.tfvars
+infrastructure/tfplan
+infrastructure/crash.log
+
+# Never commit credentials
+*.json.key
+*-sa-key.json
+.env

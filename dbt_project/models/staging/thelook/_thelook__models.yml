@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_thelook__orders
+    description: Cleaned, typed and renamed orders. One row per order.
+    columns:
+      - name: order_id
+        description: Primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to stg_thelook__users.
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Lowercased fulfilment status.
+      - name: item_count
+        description: Number of items in the order.
+      - name: ordered_at
+        description: Order creation timestamp (UTC).
+
+  - name: stg_thelook__users
+    description: Customers with PII removed. One row per customer.
+    columns:
+      - name: customer_id
+        description: Primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_country
+        description: Country of the customer.
+      - name: acquisition_channel
+        description: Lowercased marketing channel that acquired the customer.

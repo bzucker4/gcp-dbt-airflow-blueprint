@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      Order-grain fact table, partitioned by order_date and clustered by status
+      and country. Incremental (insert_overwrite) over a rolling lookback window
+      set by var `incremental_lookback_days`.
+    columns:
+      - name: order_id
+        description: Primary key.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to stg_thelook__users.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_thelook__users')
+                field: customer_id
+              config:
+                severity: warn
+      - name: order_date
+        description: Partition column. Date the order was placed (UTC).
+        data_tests:
+          - not_null
+      - name: order_status
+        description: Fulfilment status.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['processing', 'shipped', 'complete', 'cancelled', 'returned']
+              config:
+                severity: warn
+      - name: hours_to_delivery
+        description: Hours between order and delivery. Null until delivered.

@@ -1,0 +1,70 @@
+# =============================================================================
+# dbt_project/profiles.yml
+#
+# Security model (no service account keys exist anywhere in this stack):
+#
+#   dev   Local development. Your own Google identity via Application Default
+#         Credentials:  gcloud auth application-default login
+#         Writes every model to a personal scratch dataset dbt_<username>_scratch,
+#         never to staging or warehouse.
+#
+#   prod  Cloud Composer. Source credentials are Application Default
+#         Credentials (ADC) on the worker, i.e. the Airflow runtime SA, which
+#         has NO BigQuery data access. dbt exchanges them for short-lived
+#         tokens of the restricted dbt-runner SA via impersonation
+#         (roles/iam.serviceAccountTokenCreator). Default dataset: staging.
+#         All values are injected as Composer environment variables by Terraform.
+#
+#   ci    GitHub Actions. Uses a short-lived OAuth access token issued through
+#         Workload Identity Federation (oauth-secrets). Used for `dbt parse`.
+#
+# This file is safe to commit: it contains no secrets, only env_var() lookups.
+# =============================================================================
+
+gcp_dbt_blueprint:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('DBT_GCP_PROJECT') }}"
+      dataset: "{{ env_var('DBT_DEV_DATASET', 'dbt_' ~ (env_var('USER', 'developer') | lower | replace('-', '_') | replace('.', '_')) ~ '_scratch') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'US') }}"
+      threads: 8
+      priority: interactive
+      job_creation_timeout_seconds: 60
+      job_execution_timeout_seconds: 900
+      job_retries: 1
+      job_retry_deadline_seconds: 1200
+      # Cost guard: any single dev query that would bill more than this fails instead.
+      maximum_bytes_billed: "{{ env_var('DBT_DEV_MAX_BYTES_BILLED', '10737418240') | as_number }}"
+
+    prod:
+      type: bigquery
+      # oauth = Application Default Credentials (the Composer worker identity).
+      method: oauth
+      impersonate_service_account: "{{ env_var('DBT_IMPERSONATE_SA') }}"
+      project: "{{ env_var('DBT_GCP_PROJECT') }}"
+      dataset: "{{ env_var('DBT_PROD_DATASET', 'staging') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'US') }}"
+      threads: "{{ env_var('DBT_THREADS', '8') | as_number }}"
+      priority: interactive
+      job_creation_timeout_seconds: 120
+      job_execution_timeout_seconds: 3600
+      job_retries: 2
+      job_retry_deadline_seconds: 3600
+      maximum_bytes_billed: "{{ env_var('DBT_PROD_MAX_BYTES_BILLED', '1099511627776') | as_number }}"
+
+    ci:
+      type: bigquery
+      method: oauth-secrets
+      token: "{{ env_var('DBT_GOOGLE_ACCESS_TOKEN') }}"
+      project: "{{ env_var('DBT_GCP_PROJECT') }}"
+      dataset: "{{ env_var('DBT_CI_DATASET', 'dbt_ci') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'US') }}"
+      threads: 8
+      priority: interactive
+      job_execution_timeout_seconds: 900
+      job_retries: 1
+      maximum_bytes_billed: "{{ env_var('DBT_CI_MAX_BYTES_BILLED', '10737418240') | as_number }}"

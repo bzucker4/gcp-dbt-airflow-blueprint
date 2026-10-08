@@ -1,0 +1,62 @@
+# =============================================================================
+# dbt_project/dbt_project.yml
+#
+# Layering (dataset routing is handled by macros/generate_schema_name.sql):
+#
+#   models/staging/<source>/  ->  prod: `staging`    dev: dbt_<user>_scratch
+#   models/marts/<domain>/    ->  prod: `warehouse`  dev: dbt_<user>_scratch
+#
+# The `raw` dataset is owned by ingestion tools and is read-only for dbt.
+# IMPORTANT: `name` must equal DBT_PROJECT_NAME in dags/blueprint_common/config.py.
+# =============================================================================
+
+name: gcp_dbt_blueprint
+version: "1.0.0"
+config-version: 2
+require-dbt-version: [">=1.10.5", "<2.0.0"]
+
+profile: gcp_dbt_blueprint
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+flags:
+  send_anonymous_usage_stats: false
+  partial_parse: true
+
+vars:
+  # Days re-processed by incremental models on each run (late-arriving data).
+  incremental_lookback_days: 3
+
+models:
+  gcp_dbt_blueprint:
+    +persist_docs:
+      relation: true
+      columns: true
+    +labels:
+      managed_by: dbt
+      dbt_project: gcp_dbt_blueprint
+
+    staging:
+      +schema: staging
+      +materialized: view
+      +tags: ["layer_staging"]
+
+    marts:
+      +schema: warehouse
+      +materialized: table
+      +tags: ["layer_marts"]
+
+data_tests:
+  gcp_dbt_blueprint:
+    +severity: error

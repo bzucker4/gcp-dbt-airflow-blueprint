@@ -1,0 +1,38 @@
+version: 2
+
+# Demo source so the pipeline runs end to end on day one, with zero ingestion
+# setup. Replace with your own sources in the `raw` dataset, e.g.:
+#
+#   - name: stripe
+#     database: "{{ env_var('DBT_GCP_PROJECT') }}"
+#     schema: raw
+#     tables:
+#       - name: stripe_charges
+
+sources:
+  - name: thelook
+    description: >
+      Synthetic e-commerce data from the BigQuery public dataset
+      bigquery-public-data.thelook_ecommerce (US multi-region).
+    database: bigquery-public-data
+    schema: thelook_ecommerce
+    loader: google_public_datasets
+    tables:
+      - name: orders
+        description: One row per customer order.
+        columns:
+          - name: order_id
+            data_tests:
+              - not_null
+              - unique
+          - name: user_id
+            data_tests:
+              - not_null
+
+      - name: users
+        description: One row per registered customer.
+        columns:
+          - name: id
+            data_tests:
+              - not_null
+              - unique
